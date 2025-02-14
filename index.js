@@ -1,4 +1,3 @@
-const { timeout } = require("puppeteer");
 const puppeteer = require("puppeteer");
 
 function delay(time) {
@@ -35,31 +34,20 @@ async function login(page, phone, passphrase) {
   }
 }
 
-async function bustCollection(browser, page) {
-  // let dropDownButtonSelector = "div.dropdown-toggle.button";
-  let dropDownButtonSelector = "div[class='dropdown-toggle button']";
-
-  let bustArraySelector = "div.payouts-block";
+async function bustCollection(page) {
+  let previousBust = null;
 
   while (true) {
     try {
-      console.log(1);
-      await page.waitForSelector(dropDownButtonSelector, { timeout: 30000 });
+      const element = await page.$("app-bubble-multiplier.dropdown-item");
+      const currentBust = element
+        ? await element.evaluate((el) => el.textContent.trim())
+        : null;
 
-      await page.evaluate((s) => {
-        document.querySelector(s).click();
-      }, dropDownButtonSelector),
-        await page.click(dropDownButtonSelector);
-
-      await page.waitForSelector(bustArraySelector);
-
-      const bust = await page.$eval((el) => {
-        el.querySelector("app_bubble_multiplier.payouts.ng-star-inserted");
-      }, bustArraySelector);
-
-      console.log("Current bust:", bust);
-      await delay(2000);
-      await page.click(dropDownButtonSelector);
+      if (currentBust !== previousBust) {
+        console.log("Current bust: ", currentBust);
+        previousBust = currentBust;
+      }
     } catch (error) {
       console.log("Error: ", error);
       await delay(2000);
@@ -82,12 +70,13 @@ async function main() {
     await login(page, "0115361123", "Kereskwe1");
 
     console.log("Signed in");
+
     await delay(15000);
-
     await page.waitForSelector("iframe#aviator-iframe");
-    const aviatorFrame = await page.frame("#aviator-iframe");
+    const elementHandle = await page.$("iframe[id='aviator-iframe']");
+    const frame = await elementHandle.contentFrame();
 
-    await bustCollection(browser, aviatorFrame);
+    await bustCollection(frame);
 
     // Close browser
     // await browser.close();
@@ -99,5 +88,3 @@ async function main() {
 }
 
 main();
-
-
