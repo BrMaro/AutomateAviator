@@ -1,4 +1,5 @@
 const puppeteer = require("puppeteer");
+const fs = require("fs");
 
 function delay(time) {
   return new Promise(function (resolve) {
@@ -36,6 +37,7 @@ async function login(page, phone, passphrase) {
 
 async function bustCollection(page) {
   let previousBust = null;
+  let bustLog = [];
 
   while (true) {
     try {
@@ -44,13 +46,21 @@ async function bustCollection(page) {
         ? await element.evaluate((el) => el.textContent.trim())
         : null;
 
-      if (currentBust !== previousBust) {
+      if (currentBust && currentBust !== previousBust) {
+        const currentTime = new Date();
+        const formattedTime = currentTime.toTimeString().split(" ")[0];
+
         console.log("Current bust: ", currentBust);
+
+        bustLog.push({ Time: formattedTime, bust: parseFloat(currentBust) });
         previousBust = currentBust;
       }
     } catch (error) {
       console.log("Error: ", error);
-      await delay(2000);
+      fs.writeFileSync("bustLog.json", JSON.stringify(bustLog, null, 2));
+      console.log("Bust log written to bustLog.json");
+
+      await delay(2000); // Adjust delay as needed
     }
   }
 }
@@ -60,7 +70,6 @@ async function main() {
   try {
     const browser = await puppeteer.launch({
       headless: false,
-      defaultViewport: null,
     });
     const page = await browser.newPage();
 
@@ -77,9 +86,6 @@ async function main() {
     const frame = await elementHandle.contentFrame();
 
     await bustCollection(frame);
-
-    // Close browser
-    // await browser.close();
   } catch (error) {
     console.error("An error occurred:", error);
   } finally {
