@@ -38,6 +38,7 @@ async function login(page, phone, passphrase) {
 async function bustCollection(page) {
   let previousBust = null;
   let bustLog = [];
+  let bustCount = 0;
 
   while (true) {
     try {
@@ -50,17 +51,18 @@ async function bustCollection(page) {
         const currentTime = new Date();
         const formattedTime = currentTime.toTimeString().split(" ")[0];
 
-        console.log("Current bust: ", currentBust);
+        bustCount += 1;
+        console.log(`No. ${bustCount}, Current bust: ${currentBust}`);
 
-        bustLog.push({ Time: formattedTime, bust: parseFloat(currentBust) });
+        const bustData = { Time: formattedTime, bust: parseFloat(currentBust) };
+        bustLog.push(bustData);
+        fs.writeFileSync("bustLog.json", JSON.stringify(bustLog, null, 2));
+
         previousBust = currentBust;
       }
     } catch (error) {
       console.log("Error: ", error);
-      fs.writeFileSync("bustLog.json", JSON.stringify(bustLog, null, 2));
-      console.log("Bust log written to bustLog.json");
-
-      await delay(2000); // Adjust delay as needed
+      await delay(2000);
     }
   }
 }
