@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const { timeout } = require("puppeteer");
 
 function delay(time) {
   return new Promise(function (resolve) {
@@ -35,6 +36,67 @@ async function login(page, phone, passphrase) {
   }
 }
 
+async function single_bet(page, amount, multiplier) {
+  try {
+    console.log(1);
+    let selector = "button.tab.ng-star-inserted";
+    await page.waitForSelector(selector);
+    await page.evaluate((s) => {
+      document.querySelectorAll(s)[4].click();
+    }, selector);
+    console.log(2);
+
+    const amtInput = await page.$("input.font-weight-bold");
+    await amtInput.click({ clickCount: 3 });
+    console.log(3);
+
+    await amtInput.type(String(amount));
+    console.log(4);
+    selector = "div.input-switch";
+    await page.evaluate((s) => {
+      document.querySelectorAll(s)[4].click();
+    }, selector);
+
+    console.log(5);
+    selector = "input.font-weight-bold";
+    const elements = await page.$$(selector);
+    await elements[1].click({ clickCount: 3 });
+    await elements[1].type(String(multiplier));
+
+    console.log(6);
+    selector = "button.btn.btn-success.bet.ng-star-inserted";
+    await page.evaluate((s) => {
+      document.querySelectorAll(s)[0].click();
+    }, selector);
+    console.log(7);
+    await delay(500);
+    await page.waitForSelector("button.btn.btn-danger", { timeout: 120000 });
+    await page.waitForSelector("button.btn.btn-warning", { timeout: 120000 });
+    console.log(8);
+
+    await delay(2000);
+
+    selector = "div.input-switch";
+    await page.waitForSelector(selector);
+    await page.evaluate((s) => {
+      document.querySelectorAll(s)[4].click();
+    }, selector);
+    console.log(9);
+
+    selector = "button.tab.ng-star-inserted";
+    await page.waitForSelector(selector);
+    await page.evaluate((s) => {
+      document.querySelectorAll(s)[3].click();
+    }, selector);
+    console.log(10);
+
+    console.log("Exiting Bet Loop");
+  } catch (error) {
+    console.error("Single Bet error:", error);
+    throw error;
+  }
+}
+
 async function bustCollection(page) {
   let previousBust = null;
   let bustLog = [];
@@ -56,7 +118,7 @@ async function bustCollection(page) {
 
         const bustData = { Time: formattedTime, bust: parseFloat(currentBust) };
         bustLog.push(bustData);
-        fs.writeFileSync("bustLog.json", JSON.stringify(bustLog, null, 2));
+        fs.writeFileSync("bustLog.json", JSON.stringify(bustLog));
 
         previousBust = currentBust;
       }
@@ -87,7 +149,8 @@ async function main() {
     const elementHandle = await page.$("iframe[id='aviator-iframe']");
     const frame = await elementHandle.contentFrame();
 
-    await bustCollection(frame);
+    // await bustCollection(frame);
+    await single_bet(frame, 10.0, 1.1);
   } catch (error) {
     console.error("An error occurred:", error);
   } finally {
