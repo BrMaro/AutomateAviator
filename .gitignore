@@ -1,3 +1,16 @@
-b.txt
-bustlog.json
+# Environment variables
+.env
+
+# Logs
+*.log
+bustLog.json
+
+# Dependencies
+node_modules/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+
 strategies.js
